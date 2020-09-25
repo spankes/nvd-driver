@@ -9,30 +9,15 @@ DRIVER_VERSION=${DRIVER_VERSION:?"Missing driver version"}
 KERNEL_UPDATE_HOOK=/run/kernel/postinst.d/update-nvidia-driver
 
 _update_package_cache() {
-    if [ "${PACKAGE_TAG:-}" != "builtin" ]; then
-        echo "Updating the package cache..."
-        yum -q makecache
-    fi
+  echo "skipping..."
 }
 
 _cleanup_package_cache() {
-    if [ "${PACKAGE_TAG:-}" != "builtin" ]; then
-        echo "Cleaning up the package cache..."
-        rm -rf /var/cache/yum/*
-    fi
+  echo "skipping..."
 }
 
 # Resolve the kernel version to the form major.minor.patch-revision.
 _resolve_kernel_version() {
-    local version=$(yum -q list available --showduplicates kernel-headers |
-      awk -v arch=x86_64 'NR>1 {print $2"."arch}' | tac | grep -E -m1 "^${KERNEL_VERSION/latest/.*}")
-
-    echo "Resolving Linux kernel version..."
-    if [ -z "${version}" ]; then
-        echo "Could not resolve Linux kernel version" >&2
-        return 1
-    fi
-    KERNEL_VERSION="${version}"
     echo "Proceeding with Linux kernel version ${KERNEL_VERSION}"
     return 0
 }
@@ -45,10 +30,6 @@ _install_prerequisites() (
 # Cleanup the prerequisites installed above.
 _remove_prerequisites() {
     true
-    #if [ "${PACKAGE_TAG:-}" != "builtin" ]; then
-        # yum -q -y remove kernel-headers-${KERNEL_VERSION} kernel-devel-${KERNEL_VERSION} > /dev/null
-        # TODO remove module files not matching an existing driver package.
-    #fi
 }
 
 # Check if the kernel version requires a new precompiled driver packages.
@@ -61,7 +42,6 @@ _kernel_requires_package() {
     cd /usr/src/nvidia-${DRIVER_VERSION}/kernel
 
     # When the kernel version is latest on host, this check fails and lead to recompilation, even when precompiled modules exist.
-    #if [ "${KERNEL_VERSION}" != "$(uname -r)" ]; then
     proc_mount_arg="--proc-mount-point /lib/modules/${KERNEL_VERSION}/proc"
     #fi
     for pkg_name in $(ls -d -1 precompiled/** 2> /dev/null); do
